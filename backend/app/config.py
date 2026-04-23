@@ -48,6 +48,15 @@ class Settings(BaseSettings):
     magalu_api_key: str = ""
     magalu_tenant_id: str = ""
 
+    # Telegram
+    telegram_bot_token: str = ""
+    telegram_chat_id: str = ""
+
+    # WhatsApp
+    whatsapp_token: str = ""
+    whatsapp_phone_id: str = ""
+    whatsapp_recipient: str = ""
+
     # Monitoramento
     monitoring_interval_minutes: int = 30
     auto_execute: bool = False
