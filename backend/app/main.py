@@ -61,6 +61,15 @@ app.include_router(decisions_router)
 app.include_router(dashboard_router)
 
 
+@app.on_event("startup")
+async def startup():
+    from .database import engine, Base
+    from . import models  # noqa: F401
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    logger.info("Database tables created / verified")
+
+
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
     logger.info("%s %s", request.method, request.url.path)
@@ -87,3 +96,20 @@ async def root():
 @app.get("/health")
 async def health():
     return {"status": "healthy"}
+
+
+@app.post("/api/seed")
+async def seed_database():
+    """Popula o banco com dados fake para desenvolvimento/teste."""
+    from .seed import run_seed
+    from .database import async_session
+
+    async with async_session() as session:
+        try:
+            counts = await run_seed(session)
+            await session.commit()
+            return {"status": "success", "message": "Dados de teste inseridos!", "counts": counts}
+        except Exception as e:
+            await session.rollback()
+            logger.error("Seed failed: %s", e, exc_info=True)
+            return JSONResponse(status_code=500, content={"detail": f"Erro no seed: {str(e)}"})

@@ -26,3 +26,5 @@ htmlcov/
 .pytest_cache/
 celerybeat-schedule
 celerybeat-schedule.db
+*.db
+!*.db-journal

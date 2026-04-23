@@ -3,7 +3,15 @@ from sqlalchemy.orm import DeclarativeBase
 
 from .config import settings
 
-engine = create_async_engine(settings.database_url, echo=False, pool_size=20, max_overflow=10)
+connect_args = {}
+if settings.database_url.startswith("sqlite"):
+    connect_args = {"check_same_thread": False}
+
+engine = create_async_engine(
+    settings.database_url,
+    echo=False,
+    connect_args=connect_args,
+)
 
 async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 

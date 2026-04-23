@@ -2,7 +2,7 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    database_url: str = "postgresql+asyncpg://user:password@localhost:5432/ecommerce_ai"
+    database_url: str = "sqlite+aiosqlite:///./ecommerce_ai.db"
     redis_url: str = "redis://localhost:6379/0"
 
     # LLM
