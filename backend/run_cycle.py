@@ -4,11 +4,10 @@ Executa um ciclo completo de análise + decisão para um produto.
 Uso:
     python run_cycle.py --sku SKU-001
     python run_cycle.py --all
-    python run_cycle.py --seed --sku SKU-001   (popula banco + analisa)
+    python run_cycle.py --sku SKU-001 --no-llm
 """
 import argparse
 import asyncio
-import json
 import logging
 import sys
 from datetime import datetime, timedelta
@@ -121,7 +120,7 @@ async def run_for_product(db, product: Product, use_llm: bool = True):
 
     if market.get("status") in ("not_found", "no_data"):
         print(f"  ⚠ {market.get('status', 'sem dados')} — sem dados de concorrentes recentes")
-        print("  Dica: rode 'python run_cycle.py --seed' para popular com dados fake")
+        print("  Dica: conecte o Mercado Livre via /api/auth/mercadolivre/authorize para coletar dados reais")
         return
 
     stats = market["price_stats"]
@@ -267,14 +266,13 @@ async def main():
     parser = argparse.ArgumentParser(description="Executa ciclo de análise + decisão da IA")
     parser.add_argument("--sku", type=str, help="SKU do produto para analisar (ex: SKU-001)")
     parser.add_argument("--all", action="store_true", help="Analisar todos os produtos ativos")
-    parser.add_argument("--seed", action="store_true", help="Popular banco com dados fake antes de analisar")
     parser.add_argument("--no-llm", action="store_true", help="Forçar modo offline (sem chamar OpenAI)")
     args = parser.parse_args()
 
     if not args.sku and not args.all:
         parser.print_help()
         print("\nExemplos:")
-        print("  python run_cycle.py --seed --sku SKU-001")
+        print("  python run_cycle.py --sku SKU-001")
         print("  python run_cycle.py --all")
         print("  python run_cycle.py --sku SKU-003 --no-llm")
         return
@@ -283,21 +281,14 @@ async def main():
         await conn.run_sync(Base.metadata.create_all)
 
     async with async_session() as db:
-        if args.seed:
-            print_section("POPULANDO BANCO COM DADOS FAKE")
-            from app.seed import run_seed
-            counts = await run_seed(db)
-            await db.commit()
-            print(f"  Inseridos: {json.dumps(counts, indent=2)}")
-
         use_llm = not args.no_llm
 
         if args.sku:
             result = await db.execute(select(Product).where(Product.sku == args.sku))
             product = result.scalar_one_or_none()
             if not product:
-                print(f"\n  ❌ Produto com SKU '{args.sku}' não encontrado.")
-                print("  Dica: rode com --seed para criar dados fake")
+                print(f"\n  Produto com SKU '{args.sku}' nao encontrado.")
+                print("  Cadastre produtos via API POST /api/products ou pelo dashboard")
                 return
             await run_for_product(db, product, use_llm)
 
@@ -305,8 +296,8 @@ async def main():
             result = await db.execute(select(Product).where(Product.status == "active"))
             products = result.scalars().all()
             if not products:
-                print("\n  ❌ Nenhum produto ativo encontrado.")
-                print("  Dica: rode com --seed para criar dados fake")
+                print("\n  Nenhum produto ativo encontrado.")
+                print("  Cadastre produtos via API POST /api/products ou pelo dashboard")
                 return
             print(f"\n  Analisando {len(products)} produto(s)...\n")
             for product in products:

@@ -96,20 +96,3 @@ async def root():
 @app.get("/health")
 async def health():
     return {"status": "healthy"}
-
-
-@app.post("/api/seed")
-async def seed_database():
-    """Popula o banco com dados fake para desenvolvimento/teste."""
-    from .seed import run_seed
-    from .database import async_session
-
-    async with async_session() as session:
-        try:
-            counts = await run_seed(session)
-            await session.commit()
-            return {"status": "success", "message": "Dados de teste inseridos!", "counts": counts}
-        except Exception as e:
-            await session.rollback()
-            logger.error("Seed failed: %s", e, exc_info=True)
-            return JSONResponse(status_code=500, content={"detail": f"Erro no seed: {str(e)}"})
