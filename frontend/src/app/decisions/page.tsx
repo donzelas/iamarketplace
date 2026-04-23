@@ -105,11 +105,11 @@ export default function DecisionsPage() {
                     <div className="flex items-center gap-4 text-xs text-gray-500">
                       {d.old_value != null && d.new_value != null && (
                         <span>
-                          R$ {d.old_value.toFixed(2)} → <span className="text-white font-medium">R$ {d.new_value.toFixed(2)}</span>
+                          R$ {Number(d.old_value).toFixed(2)} → <span className="text-white font-medium">R$ {Number(d.new_value).toFixed(2)}</span>
                         </span>
                       )}
                       {d.confidence != null && (
-                        <span>Confiança: {(d.confidence * 100).toFixed(0)}%</span>
+                        <span>Confiança: {(Number(d.confidence) * 100).toFixed(0)}%</span>
                       )}
                       <span>{new Date(d.created_at).toLocaleString("pt-BR")}</span>
                       {d.executed_at && (

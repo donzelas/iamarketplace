@@ -13,9 +13,10 @@ router = APIRouter(prefix="/api/products", tags=["Products"])
 
 @router.get("/", response_model=list[ProductResponse])
 async def list_products(status: str = "active", db: AsyncSession = Depends(get_db)):
-    result = await db.execute(
-        select(Product).where(Product.status == status).order_by(Product.name)
-    )
+    query = select(Product).order_by(Product.name)
+    if status != "all":
+        query = query.where(Product.status == status)
+    result = await db.execute(query)
     return result.scalars().all()
 
 

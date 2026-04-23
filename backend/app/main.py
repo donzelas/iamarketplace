@@ -15,6 +15,7 @@ from .api import (
     dashboard_router,
 )
 from .api.auth import router as auth_router
+from .api.ml_metrics import router as ml_metrics_router
 
 handler = logging.StreamHandler(sys.stdout)
 handler.setFormatter(logging.Formatter(
@@ -59,6 +60,7 @@ app.include_router(competitors_router)
 app.include_router(ads_router)
 app.include_router(decisions_router)
 app.include_router(dashboard_router)
+app.include_router(ml_metrics_router)
 
 
 @app.on_event("startup")

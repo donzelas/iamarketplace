@@ -17,7 +17,9 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 
 export const api = {
   dashboard: {
-    overview: () => request<DashboardOverview>("/api/dashboard/overview"),
+    overview: (marketplace?: string) =>
+      request<DashboardOverview>(`/api/dashboard/overview${marketplace ? `?marketplace=${marketplace}` : ""}`),
+    marketplaces: () => request<Marketplace[]>("/api/dashboard/marketplaces"),
     productAnalysis: (id: string) => request<MarketAnalysis>(`/api/dashboard/product/${id}/analysis`),
     marginHistory: (id: string, days = 30) => request<MarginSnapshot[]>(`/api/dashboard/product/${id}/margin-history?days=${days}`),
   },
@@ -35,6 +37,10 @@ export const api = {
     campaigns: (productId?: string) => request<Campaign[]>(`/api/ads/campaigns${productId ? `?product_id=${productId}` : ""}`),
     performance: (productId: string, days = 7) => request<AdPerformance[]>(`/api/ads/performance/${productId}?days=${days}`),
   },
+  ml: {
+    listings: (status = "all", days = 30) => request<MLListing[]>(`/api/ml/listings?status=${status}&days=${days}`),
+    summary: (days = 30) => request<MLSummary>(`/api/ml/summary?days=${days}`),
+  },
   decisions: {
     list: (status?: string) => request<Decision[]>(`/api/decisions/${status ? `?status=${status}` : ""}`),
     pending: () => request<Decision[]>("/api/decisions/pending"),
@@ -43,10 +49,26 @@ export const api = {
   },
 };
 
+export interface Marketplace {
+  id: string;
+  name: string;
+  listings: number;
+  products: number;
+  connected: boolean;
+}
+
 export interface DashboardOverview {
-  products: { total: number; active: number };
+  products: { total: number; active: number; paused: number };
+  listings: { total: number; active: number; paused: number };
+  competitors_count: number;
+  campaigns_count: number;
   today: { ad_spend: number; revenue: number; roas: number };
+  financials: { total_value: number; total_cost: number; avg_margin: number };
+  margin_health: { healthy: number; warning: number; critical: number };
+  top_products: { id: string; name: string; sku: string; price: number; cost: number; margin: number; status: string }[];
+  categories: { name: string; count: number }[];
   pending_decisions: number;
+  marketplace_filter: string | null;
 }
 
 export interface Product {
@@ -140,6 +162,46 @@ export interface MarketAnalysis {
   trend: { direction: string; change_pct_72h: number };
   marketplaces: Record<string, { count: number; min: number; avg: number; max: number }>;
   analyzed_at: string;
+}
+
+export interface MLListing {
+  id: string;
+  listing_id: string;
+  product_id: string;
+  product_name: string;
+  product_sku: string;
+  product_cost: number;
+  thumbnail: string | null;
+  current_price: number;
+  original_price: number | null;
+  listing_type: string | null;
+  free_shipping: boolean;
+  status: string;
+  sold_quantity: number;
+  sold_period: number;
+  available_quantity: number;
+  visits_total: number;
+  visits_period_days: number;
+  revenue_total: number;
+  revenue_period: number;
+  marketplace_fee_pct: number;
+  condition: string | null;
+  health: string | null;
+  listing_url: string | null;
+  synced_at: string | null;
+}
+
+export interface MLSummary {
+  total_listings: number;
+  active_listings: number;
+  paused_listings: number;
+  total_revenue_period: number;
+  total_sold_period: number;
+  total_visits: number;
+  total_available: number;
+  avg_price: number;
+  avg_price_per_sale: number;
+  period_days: number;
 }
 
 export interface MarginSnapshot {

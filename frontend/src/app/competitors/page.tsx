@@ -100,8 +100,10 @@ export default function CompetitorsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {competitors.sort((a, b) => (a.last_price ?? 0) - (b.last_price ?? 0)).map((c) => {
-                    const diff = product && c.last_price ? ((c.last_price - product.current_price) / product.current_price * 100) : 0;
+                  {competitors.sort((a, b) => (Number(a.last_price) || 0) - (Number(b.last_price) || 0)).map((c) => {
+                    const lastPrice = Number(c.last_price) || 0;
+                    const myPrice = Number(product?.current_price) || 0;
+                    const diff = myPrice > 0 && lastPrice > 0 ? ((lastPrice - myPrice) / myPrice * 100) : 0;
                     return (
                       <tr key={c.id} className="border-b border-[var(--card-border)] hover:bg-white/5">
                         <td className="px-4 py-3">
@@ -110,7 +112,7 @@ export default function CompetitorsPage() {
                         <td className="px-4 py-3 text-gray-400">{c.seller ?? "—"}</td>
                         <td className="px-4 py-3 text-white max-w-xs truncate">{c.name ?? "—"}</td>
                         <td className="px-4 py-3 text-right text-white font-medium">
-                          {c.last_price ? `R$ ${c.last_price.toFixed(2)}` : "—"}
+                          {lastPrice > 0 ? `R$ ${lastPrice.toFixed(2)}` : "—"}
                         </td>
                         <td className={`px-4 py-3 text-right font-medium ${diff < 0 ? "text-red-400" : diff > 0 ? "text-green-400" : "text-gray-400"}`}>
                           {diff !== 0 ? `${diff > 0 ? "+" : ""}${diff.toFixed(1)}%` : "—"}
