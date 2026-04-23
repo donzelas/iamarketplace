@@ -20,6 +20,7 @@ USERS_DB: dict[str, str] = {}
 
 ML_AUTH_URL = "https://auth.mercadolivre.com.br/authorization"
 ML_TOKEN_URL = "https://api.mercadolibre.com/oauth/token"
+ML_REDIRECT_URI = "https://www.google.com/"
 
 
 class RegisterRequest(BaseModel):
@@ -67,12 +68,11 @@ async def ml_authorize():
     if not settings.ml_client_id:
         raise HTTPException(status_code=400, detail="ML_CLIENT_ID não configurado no .env")
 
-    redirect_uri = "http://localhost:8000/api/auth/mercadolivre/callback"
     url = (
         f"{ML_AUTH_URL}"
         f"?response_type=code"
         f"&client_id={settings.ml_client_id}"
-        f"&redirect_uri={redirect_uri}"
+        f"&redirect_uri={ML_REDIRECT_URI}"
     )
     return RedirectResponse(url)
 
@@ -80,7 +80,6 @@ async def ml_authorize():
 @router.get("/mercadolivre/callback")
 async def ml_callback(code: str, db: AsyncSession = Depends(get_db)):
     """Recebe o code do ML e troca por access_token + refresh_token."""
-    redirect_uri = "http://localhost:8000/api/auth/mercadolivre/callback"
 
     async with httpx.AsyncClient(timeout=15.0) as client:
         resp = await client.post(ML_TOKEN_URL, json={
@@ -88,7 +87,7 @@ async def ml_callback(code: str, db: AsyncSession = Depends(get_db)):
             "client_id": settings.ml_client_id,
             "client_secret": settings.ml_client_secret,
             "code": code,
-            "redirect_uri": redirect_uri,
+            "redirect_uri": ML_REDIRECT_URI,
         })
 
     if resp.status_code != 200:
@@ -116,15 +115,13 @@ async def ml_callback(code: str, db: AsyncSession = Depends(get_db)):
 @router.post("/mercadolivre/code")
 async def ml_exchange_code(data: MLCodeRequest, db: AsyncSession = Depends(get_db)):
     """Troca um code manualmente (alternativa ao callback automático)."""
-    redirect_uri = "https://localhost"
-
     async with httpx.AsyncClient(timeout=15.0) as client:
         resp = await client.post(ML_TOKEN_URL, json={
             "grant_type": "authorization_code",
             "client_id": settings.ml_client_id,
             "client_secret": settings.ml_client_secret,
             "code": data.code,
-            "redirect_uri": redirect_uri,
+            "redirect_uri": ML_REDIRECT_URI,
         })
 
     if resp.status_code != 200:
